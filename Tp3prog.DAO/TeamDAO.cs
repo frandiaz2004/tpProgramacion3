@@ -1,16 +1,24 @@
 using Tp3prog.Entities;
+using Tp3prog.DAO.EntityFramework;
 
 namespace Tp3prog.DAO;
 
 public class TeamDAO
 {
-    public List<Team> GetAll() => MockDatabase.Teams;
-    public Team? GetById(long id) => MockDatabase.Teams.FirstOrDefault(team => team.Id == id);
+    private readonly AppDbContext context;
+
+    public TeamDAO(AppDbContext context)
+    {
+        this.context = context;
+    }
+
+    public List<Team> GetAll() => context.Teams.ToList();
+    public Team? GetById(long id) => context.Teams.Find(id);
 
     public Team Create(Team team)
     {
-        team.Id = MockDatabase.Teams.Count == 0 ? 1 : MockDatabase.Teams.Max(item => item.Id) + 1;
-        MockDatabase.Teams.Add(team);
+        context.Teams.Add(team);
+        context.SaveChanges();
         return team;
     }
 
@@ -18,14 +26,17 @@ public class TeamDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        team.Id = id;
-        MockDatabase.Teams[MockDatabase.Teams.IndexOf(existing)] = team;
+        context.Entry(existing).CurrentValues.SetValues(team);
+        context.SaveChanges();
         return true;
     }
 
     public bool Delete(long id)
     {
         var team = GetById(id);
-        return team is not null && MockDatabase.Teams.Remove(team);
+        if (team is null) return false;
+        context.Teams.Remove(team);
+        context.SaveChanges();
+        return true;
     }
 }

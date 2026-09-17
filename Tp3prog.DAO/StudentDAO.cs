@@ -1,16 +1,24 @@
 using Tp3prog.Entities;
+using Tp3prog.DAO.EntityFramework;
 
 namespace Tp3prog.DAO;
 
 public class StudentDAO
 {
-    public List<Student> GetAll() => MockDatabase.Students;
-    public Student? GetById(long id) => MockDatabase.Students.FirstOrDefault(student => student.Id == id);
+    private readonly AppDbContext context;
+
+    public StudentDAO(AppDbContext context)
+    {
+        this.context = context;
+    }
+
+    public List<Student> GetAll() => context.Students.ToList();
+    public Student? GetById(long id) => context.Students.Find(id);
 
     public Student Create(Student student)
     {
-        student.Id = MockDatabase.Students.Count == 0 ? 1 : MockDatabase.Students.Max(item => item.Id) + 1;
-        MockDatabase.Students.Add(student);
+        context.Students.Add(student);
+        context.SaveChanges();
         return student;
     }
 
@@ -18,14 +26,17 @@ public class StudentDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        student.Id = id;
-        MockDatabase.Students[MockDatabase.Students.IndexOf(existing)] = student;
+        context.Entry(existing).CurrentValues.SetValues(student);
+        context.SaveChanges();
         return true;
     }
 
     public bool Delete(long id)
     {
         var student = GetById(id);
-        return student is not null && MockDatabase.Students.Remove(student);
+        if (student is null) return false;
+        context.Students.Remove(student);
+        context.SaveChanges();
+        return true;
     }
 }

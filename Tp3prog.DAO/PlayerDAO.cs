@@ -1,17 +1,25 @@
 using Tp3prog.Entities;
+using Tp3prog.DAO.EntityFramework;
 
 namespace Tp3prog.DAO;
 
 public class PlayerDAO
 {
-    public List<Player> GetAll() => MockDatabase.Players;
+    private readonly AppDbContext context;
 
-    public Player? GetById(long id) => MockDatabase.Players.FirstOrDefault(player => player.Id == id);
+    public PlayerDAO(AppDbContext context)
+    {
+        this.context = context;
+    }
+
+    public List<Player> GetAll() => context.Players.ToList();
+
+    public Player? GetById(long id) => context.Players.Find(id);
 
     public Player Create(Player player)
     {
-        player.Id = MockDatabase.Players.Count == 0 ? 1 : MockDatabase.Players.Max(item => item.Id) + 1;
-        MockDatabase.Players.Add(player);
+        context.Players.Add(player);
+        context.SaveChanges();
         return player;
     }
 
@@ -19,14 +27,17 @@ public class PlayerDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        player.Id = id;
-        MockDatabase.Players[MockDatabase.Players.IndexOf(existing)] = player;
+        context.Entry(existing).CurrentValues.SetValues(player);
+        context.SaveChanges();
         return true;
     }
 
     public bool Delete(long id)
     {
         var player = GetById(id);
-        return player is not null && MockDatabase.Players.Remove(player);
+        if (player is null) return false;
+        context.Players.Remove(player);
+        context.SaveChanges();
+        return true;
     }
 }

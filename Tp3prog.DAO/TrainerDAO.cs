@@ -1,16 +1,24 @@
 using Tp3prog.Entities;
+using Tp3prog.DAO.EntityFramework;
 
 namespace Tp3prog.DAO;
 
 public class TrainerDAO
 {
-    public List<Trainer> GetAll() => MockDatabase.Trainers;
-    public Trainer? GetById(long id) => MockDatabase.Trainers.FirstOrDefault(trainer => trainer.Id == id);
+    private readonly AppDbContext context;
+
+    public TrainerDAO(AppDbContext context)
+    {
+        this.context = context;
+    }
+
+    public List<Trainer> GetAll() => context.Trainers.ToList();
+    public Trainer? GetById(long id) => context.Trainers.Find(id);
 
     public Trainer Create(Trainer trainer)
     {
-        trainer.Id = MockDatabase.Trainers.Count == 0 ? 1 : MockDatabase.Trainers.Max(item => item.Id) + 1;
-        MockDatabase.Trainers.Add(trainer);
+        context.Trainers.Add(trainer);
+        context.SaveChanges();
         return trainer;
     }
 
@@ -18,14 +26,17 @@ public class TrainerDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        trainer.Id = id;
-        MockDatabase.Trainers[MockDatabase.Trainers.IndexOf(existing)] = trainer;
+        context.Entry(existing).CurrentValues.SetValues(trainer);
+        context.SaveChanges();
         return true;
     }
 
     public bool Delete(long id)
     {
         var trainer = GetById(id);
-        return trainer is not null && MockDatabase.Trainers.Remove(trainer);
+        if (trainer is null) return false;
+        context.Trainers.Remove(trainer);
+        context.SaveChanges();
+        return true;
     }
 }

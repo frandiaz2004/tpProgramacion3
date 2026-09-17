@@ -1,16 +1,24 @@
 using Tp3prog.Entities;
+using Tp3prog.DAO.EntityFramework;
 
 namespace Tp3prog.DAO;
 
 public class ActivityDAO
 {
-    public List<Activity> GetAll() => MockDatabase.Activities;
-    public Activity? GetById(long id) => MockDatabase.Activities.FirstOrDefault(activity => activity.Id == id);
+    private readonly AppDbContext context;
+
+    public ActivityDAO(AppDbContext context)
+    {
+        this.context = context;
+    }
+
+    public List<Activity> GetAll() => context.Activities.ToList();
+    public Activity? GetById(long id) => context.Activities.Find(id);
 
     public Activity Create(Activity activity)
     {
-        activity.Id = MockDatabase.Activities.Count == 0 ? 1 : MockDatabase.Activities.Max(item => item.Id) + 1;
-        MockDatabase.Activities.Add(activity);
+        context.Activities.Add(activity);
+        context.SaveChanges();
         return activity;
     }
 
@@ -18,14 +26,17 @@ public class ActivityDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        activity.Id = id;
-        MockDatabase.Activities[MockDatabase.Activities.IndexOf(existing)] = activity;
+        context.Entry(existing).CurrentValues.SetValues(activity);
+        context.SaveChanges();
         return true;
     }
 
     public bool Delete(long id)
     {
         var activity = GetById(id);
-        return activity is not null && MockDatabase.Activities.Remove(activity);
+        if (activity is null) return false;
+        context.Activities.Remove(activity);
+        context.SaveChanges();
+        return true;
     }
 }
