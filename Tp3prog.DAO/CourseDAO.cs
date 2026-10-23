@@ -78,12 +78,12 @@ public class CourseDAO
         var activity = context.Activities.Find(activityId);
         if (course is null || activity is null) return RelationshipResult.NotFound;
 
-        // La migración existente permite que una actividad pertenezca a un solo curso.
+        // CourseId es una FK sombra: una actividad tiene un solo curso.
         var courseId = context.Entry(activity).Property<long?>("CourseId").CurrentValue;
         if (courseId.HasValue && courseId != id) return RelationshipResult.Conflict;
         if (courseId == id) return RelationshipResult.Success;
 
-        // La condición se comprueba en la base para no sobrescribir otra asignación concurrente.
+        // La actualización condicional evita pisar una asignación concurrente.
         var changed = context.Activities.Where(existing => existing.Id == activityId &&
             EF.Property<long?>(existing, "CourseId") == null)
             .ExecuteUpdate(setters => setters.SetProperty(existing => EF.Property<long?>(existing, "CourseId"), (long?)id));
