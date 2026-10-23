@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Tp3prog.DAO;
-using Tp3prog.Entities;
+using Tp3prog.Contracts;
 
 namespace Tp3prog.Controllers;
 
@@ -16,20 +16,25 @@ public class PlayersController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<List<Player>> GetAll() => Ok(playerDAO.GetAll());
+    public ActionResult<List<PlayerResponse>> GetAll() => Ok(playerDAO.GetAll().Select(player => player.ToResponse()).ToList());
 
     [HttpGet("{id:long}")]
-    public ActionResult<Player> GetById(long id) => playerDAO.GetById(id) is { } player ? Ok(player) : NotFound();
+    public ActionResult<PlayerResponse> GetById(long id) => playerDAO.GetById(id) is { } player ? Ok(player.ToResponse()) : NotFound();
 
     [HttpPost]
-    public ActionResult<Player> Create(Player player)
+    public ActionResult<PlayerResponse> Create(PlayerRequest request)
     {
-        var created = playerDAO.Create(player);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        if (request.Id != 0) return BadRequest("El Id se genera al crear el jugador; omitilo o enviá 0.");
+        var created = playerDAO.Create(request.ToEntity());
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToResponse());
     }
 
     [HttpPut("{id:long}")]
-    public IActionResult Update(long id, Player player) => playerDAO.Update(id, player) ? Ok(player) : NotFound();
+    public IActionResult Update(long id, PlayerRequest request)
+    {
+        if (request.Id != 0 && request.Id != id) return BadRequest("El Id del cuerpo debe coincidir con el de la URL.");
+        return playerDAO.Update(id, request.ToEntity()) ? NoContent() : NotFound();
+    }
 
     [HttpDelete("{id:long}")]
     public IActionResult Delete(long id) => playerDAO.Delete(id) ? NoContent() : NotFound();

@@ -1,5 +1,6 @@
 using Tp3prog.Entities;
 using Tp3prog.DAO.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tp3prog.DAO;
 
@@ -12,9 +13,10 @@ public class PlayerDAO
         this.context = context;
     }
 
-    public List<Player> GetAll() => context.Players.ToList();
+    public List<Player> GetAll() => context.Players.AsNoTracking().Include(player => player.Teams).ToList();
 
-    public Player? GetById(long id) => context.Players.Find(id);
+    public Player? GetById(long id) => context.Players.Include(player => player.Teams)
+        .SingleOrDefault(player => player.Id == id);
 
     public Player Create(Player player)
     {
@@ -27,7 +29,10 @@ public class PlayerDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        context.Entry(existing).CurrentValues.SetValues(player);
+        existing.Name = player.Name;
+        existing.Age = player.Age;
+        existing.Dni = player.Dni;
+        existing.Number = player.Number;
         context.SaveChanges();
         return true;
     }

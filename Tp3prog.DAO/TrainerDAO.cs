@@ -1,5 +1,6 @@
 using Tp3prog.Entities;
 using Tp3prog.DAO.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tp3prog.DAO;
 
@@ -12,8 +13,9 @@ public class TrainerDAO
         this.context = context;
     }
 
-    public List<Trainer> GetAll() => context.Trainers.ToList();
-    public Trainer? GetById(long id) => context.Trainers.Find(id);
+    public List<Trainer> GetAll() => context.Trainers.AsNoTracking().Include(trainer => trainer.Teams).ToList();
+    public Trainer? GetById(long id) => context.Trainers.Include(trainer => trainer.Teams)
+        .SingleOrDefault(trainer => trainer.Id == id);
 
     public Trainer Create(Trainer trainer)
     {
@@ -26,7 +28,9 @@ public class TrainerDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        context.Entry(existing).CurrentValues.SetValues(trainer);
+        existing.Name = trainer.Name;
+        existing.Age = trainer.Age;
+        existing.Dni = trainer.Dni;
         context.SaveChanges();
         return true;
     }

@@ -1,6 +1,133 @@
-@Tp3prog_HostAddress = http://localhost:5175
+@host = http://localhost:5175
+# Reemplazá cada ID por el devuelto al crear su registro; no se asume una base vacía.
+@playerId = 1
+@trainerId = 2
+@studentId = 3
+@teamId = 1
+@courseId = 1
+@activityId = 1
 
-GET {{Tp3prog_HostAddress}}/weatherforecast/
+### Crear jugador (201)
+POST {{host}}/Players
+Content-Type: application/json
+
+{"name":"Lionel Perez","age":21,"dni":"40111222","number":10}
+
+### Crear entrenador (201)
+POST {{host}}/Trainers
+Content-Type: application/json
+
+{"name":"Maria Gomez","age":35,"dni":"30123456"}
+
+### Crear estudiante (201)
+POST {{host}}/Students
+Content-Type: application/json
+
+{"name":"Ana Lopez","age":20,"dni":"45123456","file":"A-001"}
+
+### Crear equipo (201)
+POST {{host}}/Teams
+Content-Type: application/json
+
+{"name":"Los Halcones","category":"Primera"}
+
+### Crear curso (201)
+POST {{host}}/Courses
+Content-Type: application/json
+
+{"name":"Programacion III"}
+
+### Crear actividad (201); type: 0 Class, 1 Exam, 2 Assignment
+POST {{host}}/Activities
+Content-Type: application/json
+
+{"title":"Practica de API","description":"Crear endpoints CRUD","date":"2026-10-22T10:00:00","type":2}
+
+### Asociar estudiante (204; repetir también devuelve 204)
+PUT {{host}}/Courses/{{courseId}}/students/{{studentId}}
+
+### Asociar actividad (204; 409 si pertenece a otro curso)
+PUT {{host}}/Courses/{{courseId}}/activities/{{activityId}}
+
+### Asociar jugador (204)
+PUT {{host}}/Teams/{{teamId}}/players/{{playerId}}
+
+### Asociar entrenador (204)
+PUT {{host}}/Teams/{{teamId}}/trainers/{{trainerId}}
+
+### Consultar equipos con relaciones
+GET {{host}}/Teams
 Accept: application/json
 
-###
+### Consultar curso con relaciones
+GET {{host}}/Courses/{{courseId}}
+Accept: application/json
+
+### Consultar jugadores
+GET {{host}}/Players
+
+### Consultar entrenadores
+GET {{host}}/Trainers
+
+### Consultar estudiantes
+GET {{host}}/Students
+
+### Consultar actividades
+GET {{host}}/Activities
+
+### Actualizar jugador sin id en el cuerpo (204)
+PUT {{host}}/Players/{{playerId}}
+Content-Type: application/json
+
+{"name":"Lionel Perez","age":22,"dni":"40111222","number":11}
+
+### Validación: tipo de actividad inválido (400)
+POST {{host}}/Activities
+Content-Type: application/json
+
+{"title":"Actividad invalida","description":"Tipo fuera del enum","type":99}
+
+### Validación: nombre demasiado corto y edad fuera de rango (400)
+POST {{host}}/Students
+Content-Type: application/json
+
+{"name":"A","age":0,"file":"A-002"}
+
+### Validación: id del cuerpo distinto al de la ruta (400)
+PUT {{host}}/Courses/{{courseId}}
+Content-Type: application/json
+
+{"id":9223372036854775807,"name":"Programacion III"}
+
+### Recurso inexistente (404)
+GET {{host}}/Courses/9223372036854775807
+
+### Quitar estudiante del curso sin borrarlo (204)
+DELETE {{host}}/Courses/{{courseId}}/students/{{studentId}}
+
+### Quitar actividad del curso sin borrarla (204)
+DELETE {{host}}/Courses/{{courseId}}/activities/{{activityId}}
+
+### Quitar jugador del equipo sin borrarlo (204)
+DELETE {{host}}/Teams/{{teamId}}/players/{{playerId}}
+
+### Quitar entrenador del equipo sin borrarlo (204)
+DELETE {{host}}/Teams/{{teamId}}/trainers/{{trainerId}}
+
+### Borrar jugador (204)
+DELETE {{host}}/Players/{{playerId}}
+
+### Borrar entrenador (204)
+DELETE {{host}}/Trainers/{{trainerId}}
+
+### Borrar estudiante (204)
+DELETE {{host}}/Students/{{studentId}}
+
+### Borrar actividad (204)
+DELETE {{host}}/Activities/{{activityId}}
+
+### Borrar equipo (204)
+DELETE {{host}}/Teams/{{teamId}}
+
+### Borrar curso (204)
+DELETE {{host}}/Courses/{{courseId}}

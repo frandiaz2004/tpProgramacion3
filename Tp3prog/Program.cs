@@ -1,13 +1,14 @@
 using Tp3prog.DAO;
 using Tp3prog.DAO.EntityFramework;
 using Microsoft.EntityFrameworkCore;
+using Tp3prog.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("No se encontró la cadena DefaultConnection.");
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<PersistenceExceptionFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>

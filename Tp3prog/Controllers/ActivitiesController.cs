@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Tp3prog.DAO;
-using Tp3prog.Entities;
+using Tp3prog.Contracts;
 
 namespace Tp3prog.Controllers;
 
@@ -16,20 +16,25 @@ public class ActivitiesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<List<Activity>> GetAll() => Ok(activityDAO.GetAll());
+    public ActionResult<List<ActivityResponse>> GetAll() => Ok(activityDAO.GetAll().Select(activity => activity.ToResponse()).ToList());
 
     [HttpGet("{id:long}")]
-    public ActionResult<Activity> GetById(long id) => activityDAO.GetById(id) is { } activity ? Ok(activity) : NotFound();
+    public ActionResult<ActivityResponse> GetById(long id) => activityDAO.GetById(id) is { } activity ? Ok(activity.ToResponse()) : NotFound();
 
     [HttpPost]
-    public ActionResult<Activity> Create(Activity activity)
+    public ActionResult<ActivityResponse> Create(ActivityRequest request)
     {
-        var created = activityDAO.Create(activity);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        if (request.Id != 0) return BadRequest("El Id se genera al crear la actividad; omitilo o enviá 0.");
+        var created = activityDAO.Create(request.ToEntity());
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToResponse());
     }
 
     [HttpPut("{id:long}")]
-    public IActionResult Update(long id, Activity activity) => activityDAO.Update(id, activity) ? Ok(activity) : NotFound();
+    public IActionResult Update(long id, ActivityRequest request)
+    {
+        if (request.Id != 0 && request.Id != id) return BadRequest("El Id del cuerpo debe coincidir con el de la URL.");
+        return activityDAO.Update(id, request.ToEntity()) ? NoContent() : NotFound();
+    }
 
     [HttpDelete("{id:long}")]
     public IActionResult Delete(long id) => activityDAO.Delete(id) ? NoContent() : NotFound();

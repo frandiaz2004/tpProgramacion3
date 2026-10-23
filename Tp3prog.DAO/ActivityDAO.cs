@@ -26,7 +26,10 @@ public class ActivityDAO
     {
         var existing = GetById(id);
         if (existing is null) return false;
-        context.Entry(existing).CurrentValues.SetValues(activity);
+        existing.Title = activity.Title;
+        existing.Description = activity.Description;
+        existing.Date = activity.Date;
+        existing.Type = activity.Type;
         context.SaveChanges();
         return true;
     }
