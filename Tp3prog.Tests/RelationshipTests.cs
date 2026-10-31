@@ -18,7 +18,8 @@ public class RelationshipTests
         long courseId, studentId;
         using (var setup = database.CreateContext())
         {
-            var course = new Course { Name = "Programación" };
+            var course = new Course { Name = "Programación",
+                Students = [new Student { Name = "Alumno inicial", Age = 20, File = "BASE" }] };
             var student = new Student { Name = "Estudiante", Age = 20, File = "123" };
             setup.AddRange(course, student);
             setup.SaveChanges();
@@ -35,16 +36,17 @@ public class RelationshipTests
 
         using (var verify = database.CreateContext())
         {
-            Assert.Equal(studentId, Assert.Single(new CourseDAO(verify).GetById(courseId)!.Students).Id);
+            Assert.Contains(new CourseDAO(verify).GetById(courseId)!.Students, student => student.Id == studentId);
             Assert.Equal(courseId, Assert.Single(new StudentDAO(verify).GetById(studentId)!.Courses).Id);
-            Assert.Single(new CourseDAO(verify).GetAll().Single().Students);
-            Assert.Single(new StudentDAO(verify).GetAll().Single().Courses);
+            Assert.Equal(2, new CourseDAO(verify).GetAll().Single().Students.Count);
+            Assert.All(new StudentDAO(verify).GetAll(), student => Assert.Single(student.Courses));
 
             var controller = new CoursesController(new CourseDAO(verify));
             var ok = Assert.IsType<OkObjectResult>(controller.GetById(courseId).Result);
             var response = Assert.IsType<CourseResponse>(ok.Value);
             using var json = JsonDocument.Parse(JsonSerializer.Serialize(response));
-            Assert.Equal(studentId, json.RootElement.GetProperty("Students")[0].GetProperty("Id").GetInt64());
+            Assert.Contains(json.RootElement.GetProperty("Students").EnumerateArray(),
+                student => student.GetProperty("Id").GetInt64() == studentId);
             Assert.False(json.RootElement.GetProperty("Students")[0].TryGetProperty("Courses", out _));
         }
 
@@ -56,7 +58,7 @@ public class RelationshipTests
         }
 
         using var final = database.CreateContext();
-        Assert.Empty(new CourseDAO(final).GetById(courseId)!.Students);
+        Assert.Single(new CourseDAO(final).GetById(courseId)!.Students);
         Assert.NotNull(final.Students.SingleOrDefault(x => x.Id == studentId));
     }
 
@@ -125,7 +127,8 @@ public class RelationshipTests
         long teamId, playerId, trainerId;
         using (var setup = database.CreateContext())
         {
-            var team = new Team { Name = "Equipo", Category = "Adultos" };
+            var team = new Team { Name = "Equipo", Category = "Adultos",
+                Players = [new Player { Name = "Jugador inicial", Age = 25, Number = 1 }] };
             var player = new Player { Name = "Jugador", Age = 25, Number = 10 };
             var trainer = new Trainer { Name = "Entrenador", Age = 35 };
             setup.AddRange(team, player, trainer);
@@ -147,12 +150,12 @@ public class RelationshipTests
         using (var verify = database.CreateContext())
         {
             var team = new TeamDAO(verify).GetById(teamId)!;
-            Assert.Single(team.Players);
+            Assert.Equal(2, team.Players.Count);
             Assert.Single(team.Trainers);
             Assert.Single(new PlayerDAO(verify).GetById(playerId)!.Teams);
             Assert.Single(new TrainerDAO(verify).GetById(trainerId)!.Teams);
-            Assert.Single(new TeamDAO(verify).GetAll().Single().Players);
-            Assert.Single(new PlayerDAO(verify).GetAll().Single().Teams);
+            Assert.Equal(2, new TeamDAO(verify).GetAll().Single().Players.Count);
+            Assert.All(new PlayerDAO(verify).GetAll(), player => Assert.Single(player.Teams));
             Assert.Single(new TrainerDAO(verify).GetAll().Single().Teams);
             var controller = new TeamsController(new TeamDAO(verify));
             var response = Assert.IsType<OkObjectResult>(controller.GetById(teamId).Result).Value;
@@ -170,7 +173,7 @@ public class RelationshipTests
 
         using var final = database.CreateContext();
         var finalTeam = new TeamDAO(final).GetById(teamId)!;
-        Assert.Empty(finalTeam.Players);
+        Assert.Single(finalTeam.Players);
         Assert.Empty(finalTeam.Trainers);
         Assert.NotNull(final.Players.SingleOrDefault(x => x.Id == playerId));
         Assert.NotNull(final.Trainers.SingleOrDefault(x => x.Id == trainerId));

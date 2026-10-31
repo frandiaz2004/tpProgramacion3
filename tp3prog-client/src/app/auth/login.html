@@ -1,0 +1,49 @@
+<main class="login-page">
+  <header class="login-header">
+    <img src="/brand/brochero-logo.webp" width="244" height="76" alt="Instituto Superior Cura Gabriel Brochero" />
+    <span class="login-badge">Programación III <span aria-hidden="true">·</span> Panel de gestión</span>
+  </header>
+  <div class="login-layout">
+    <section class="login-intro" aria-labelledby="intro-title">
+      <p class="login-kicker">INSTITUTO SUPERIOR CURA GABRIEL BROCHERO</p>
+      <h2 id="intro-title">Tu espacio de gestión,<br /><span>más simple.</span></h2>
+      <p class="login-description">Alumnos, cursos, equipos y actividades.<br />Todo lo que necesitás, en un mismo lugar.</p>
+      <div class="login-features">
+        <div class="login-feature">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 7v14M3 3h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5v16h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3Z" /></svg>
+          <strong>Gestión académica</strong>
+          <span>Alumnos, cursos y actividades</span>
+        </div>
+        <div class="login-feature login-feature-green">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="9" cy="7" r="3" /><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-4-5" /></svg>
+          <strong>Gestión deportiva</strong>
+          <span>Jugadores, equipos y entrenadores</span>
+        </div>
+      </div>
+    </section>
+    <section class="login-card" aria-labelledby="login-title">
+      <span class="eyebrow">BIENVENIDO A TU PANEL</span>
+      <h1 id="login-title">Iniciar sesión</h1>
+      <p>Ingresá con tu email y contraseña.</p>
+      <form [formGroup]="form" (ngSubmit)="submit()" [attr.aria-busy]="busy()">
+        <label class="field" for="email">Email
+          <input id="email" type="email" autocomplete="username" formControlName="email" aria-describedby="email-error" />
+        </label>
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small id="email-error" class="field-error">Ingresá un email válido.</small>
+        }
+        <label class="field" for="password">Contraseña
+          <input id="password" type="password" autocomplete="current-password" formControlName="password" aria-describedby="password-error" />
+        </label>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <small id="password-error" class="field-error">Ingresá tu contraseña.</small>
+        }
+        @if (errorMessage(); as message) {
+          <p class="login-error" role="alert">{{ message }}</p>
+        }
+        <button class="button button-primary" type="submit" [disabled]="busy() || form.invalid">{{ busy() ? 'Ingresando...' : 'Ingresar' }}</button>
+      </form>
+    </section>
+  </div>
+  <footer class="login-footer"><span>Instituto Superior Cura Gabriel Brochero</span><span>Programación III · Trabajo práctico</span></footer>
+</main>

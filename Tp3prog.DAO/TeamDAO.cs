@@ -20,11 +20,19 @@ public class TeamDAO
         .Include(team => team.Players).Include(team => team.Trainers).AsSplitQuery()
         .SingleOrDefault(team => team.Id == id);
 
-    public Team Create(Team team)
+    public RelationshipResult Create(Team team, IReadOnlyCollection<long>? playerIds)
     {
+        if (playerIds is null || playerIds.Count == 0) return RelationshipResult.MinimumRequired;
+        var ids = playerIds.Distinct().ToArray();
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, ids);
+        var players = context.Players.Where(player => ids.Contains(player.Id)).ToList();
+        if (players.Count != ids.Length) return RelationshipResult.NotFound;
+        team.Players = players;
         context.Teams.Add(team);
         context.SaveChanges();
-        return team;
+        transaction.Commit();
+        return RelationshipResult.Success;
     }
 
     public bool Update(long id, Team team)
@@ -39,37 +47,49 @@ public class TeamDAO
 
     public bool Delete(long id)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.Teams(context, [id]);
         var team = GetById(id);
         if (team is null) return false;
         context.Teams.Remove(team);
         context.SaveChanges();
+        transaction.Commit();
         return true;
     }
 
     public RelationshipResult AddPlayer(long id, long playerId)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [playerId]);
+        MembershipLocks.Teams(context, [id]);
         var team = GetById(id);
         var player = context.Players.Find(playerId);
         if (team is null || player is null) return RelationshipResult.NotFound;
-        if (team.Players.All(existing => existing.Id != playerId))
+        if (!context.Teams.Any(existing => existing.Id == id && existing.Players.Any(member => member.Id == playerId)))
         {
             team.Players.Add(player);
             context.SaveChanges();
         }
+        transaction.Commit();
         return RelationshipResult.Success;
     }
 
     public RelationshipResult RemovePlayer(long id, long playerId)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [playerId]);
+        MembershipLocks.Teams(context, [id]);
+        if (!context.Teams.Any(team => team.Id == id) || !context.Players.Any(player => player.Id == playerId))
+            return RelationshipResult.NotFound;
+        var count = context.Teams.Where(team => team.Id == id && team.Players.Any(player => player.Id == playerId))
+            .Select(team => (int?)team.Players.Count).SingleOrDefault();
+        if (count is null) return RelationshipResult.Success;
+        if (count <= 1) return RelationshipResult.MinimumRequired;
         var team = GetById(id);
-        var player = context.Players.Find(playerId);
-        if (team is null || player is null) return RelationshipResult.NotFound;
-        var assigned = team.Players.SingleOrDefault(existing => existing.Id == playerId);
-        if (assigned is not null)
-        {
-            team.Players.Remove(assigned);
-            context.SaveChanges();
-        }
+        var assigned = team!.Players.Single(existing => existing.Id == playerId);
+        team.Players.Remove(assigned);
+        context.SaveChanges();
+        transaction.Commit();
         return RelationshipResult.Success;
     }
 

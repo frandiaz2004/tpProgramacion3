@@ -1,0 +1,156 @@
+<div class="workspace">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard" (click)="$event.preventDefault(); selectSection('Players')" aria-label="Instituto Superior Cura Gabriel Brochero, inicio">
+      <img class="brand-logo-full" src="/brand/brochero-logo.webp" width="244" height="76" alt="Instituto Superior Cura Gabriel Brochero" />
+      <img class="brand-logo-compact" src="/brand/brochero-icon.svg" width="35" height="35" alt="" />
+    </a>
+
+    <div class="workspace-label">GESTIÓN</div>
+    <nav class="navigation" aria-label="Secciones">
+      <button class="nav-link" aria-label="Jugadores" [class.active]="selectedKey() === 'Players'" (click)="selectSection('Players')" [attr.aria-current]="selectedKey() === 'Players' ? 'page' : null">
+        <svg lucideDumbbell [size]="18"></svg><span>Jugadores</span>
+      </button>
+      <button class="nav-link" aria-label="Equipos" [class.active]="selectedKey() === 'Teams'" (click)="selectSection('Teams')" [attr.aria-current]="selectedKey() === 'Teams' ? 'page' : null">
+        <svg lucideUsers [size]="18"></svg><span>Equipos</span>
+      </button>
+      <button class="nav-link" aria-label="Entrenadores" [class.active]="selectedKey() === 'Trainers'" (click)="selectSection('Trainers')" [attr.aria-current]="selectedKey() === 'Trainers' ? 'page' : null">
+        <svg lucideTrophy [size]="18"></svg><span>Entrenadores</span>
+      </button>
+
+      <div class="workspace-label nav-divider">ACADÉMICO</div>
+      <button class="nav-link" aria-label="Alumnos" [class.active]="selectedKey() === 'Students'" (click)="selectSection('Students')" [attr.aria-current]="selectedKey() === 'Students' ? 'page' : null">
+        <svg lucideGraduationCap [size]="18"></svg><span>Alumnos</span>
+      </button>
+      <button class="nav-link" aria-label="Cursos" [class.active]="selectedKey() === 'Courses'" (click)="selectSection('Courses')" [attr.aria-current]="selectedKey() === 'Courses' ? 'page' : null">
+        <svg lucideBookOpen [size]="18"></svg><span>Cursos</span>
+      </button>
+      <button class="nav-link" aria-label="Actividades" [class.active]="selectedKey() === 'Activities'" (click)="selectSection('Activities')" [attr.aria-current]="selectedKey() === 'Activities' ? 'page' : null">
+        <svg lucideActivity [size]="18"></svg><span>Actividades</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <span class="api-indicator" [class.offline]="errorMessage()"></span>
+      <div><strong>Panel de gestión</strong><small>{{ errorMessage() ? 'Requiere atención' : 'Servicio disponible' }}</small></div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <header class="topbar">
+      <div class="breadcrumb"><span>Brochero</span><i>/</i><strong>Panel de gestión</strong></div>
+      <div class="topbar-actions">
+        <span class="topbar-meta"><span class="live-dot" [class.offline]="errorMessage()"></span>{{ errorMessage() ? 'Revisá los avisos' : 'Programación III' }}</span>
+        <button class="button button-quiet" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <section class="page-content">
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow"><svg lucideCalendarDays [size]="14"></svg> PROGRAMACIÓN III <span>/</span> ADMINISTRACIÓN</div>
+          <h1>{{ section().plural }}</h1>
+          <p>{{ section().description }}</p>
+        </div>
+        <button class="button button-primary" type="button" (click)="openCreateForm()"><svg lucidePlus [size]="18"></svg> Nuevo {{ section().singular }}</button>
+      </div>
+
+      <div class="overview-strip">
+        <div class="overview-icon"><svg lucideUsers [size]="20"></svg></div>
+        <div class="overview-copy"><strong>{{ records().length }}</strong><span>{{ records().length === 1 ? 'registro' : 'registros' }} en total</span></div>
+        <div class="overview-divider"></div>
+        <div class="overview-note"><span class="overview-status" [class.status-offline]="errorMessage()"></span>{{ errorMessage() ? 'Hay un aviso para revisar' : 'Tu información, en un mismo lugar' }}</div>
+        <div class="overview-count"><span>VISTA ACTUAL</span><strong>{{ section().label }}</strong></div>
+      </div>
+
+      @if (errorMessage(); as message) {
+        <div class="notice notice-error" role="alert"><span class="notice-mark">!</span><p>{{ message }}</p><button class="button button-quiet" type="button" (click)="loadRecords()">Reintentar</button></div>
+      }
+      @if (successMessage(); as message) {
+        <div class="notice notice-success" role="status"><span class="notice-mark">✓</span><p>{{ message }}</p><button class="notice-close" type="button" aria-label="Cerrar aviso" (click)="successMessage.set(null)"><svg lucideX [size]="16"></svg></button></div>
+      }
+
+      <section class="data-section" aria-labelledby="records-heading">
+        <div class="data-toolbar">
+          <div><h2 id="records-heading">Listado</h2><span class="result-count">{{ filteredRecords().length }} {{ filteredRecords().length === 1 ? 'resultado' : 'resultados' }}</span></div>
+          <label class="search-box"><svg lucideSearch [size]="17"></svg><input type="search" [value]="query()" (input)="query.set($any($event.target).value)" placeholder="Buscar en {{ section().plural.toLocaleLowerCase() }}" aria-label="Buscar registros" /></label>
+        </div>
+
+        <div class="table-frame">
+          <table>
+            <thead><tr><th class="id-column">ID</th>@for (field of section().fields; track field.key) { <th>{{ field.label }}</th> }<th class="actions-column">ACCIONES</th></tr></thead>
+            <tbody>
+              @if (loading()) {
+                <tr><td class="loading-cell" [attr.colspan]="section().fields.length + 2"><span class="spinner"></span> Cargando registros...</td></tr>
+              } @else if (filteredRecords().length === 0) {
+                <tr><td [attr.colspan]="section().fields.length + 2">
+                  <div class="empty-state"><span class="empty-icon"><svg lucideBookOpen [size]="22"></svg></span><strong>{{ errorMessage() ? 'No se pudieron cargar los datos' : query() ? 'No hay coincidencias' : 'Todavía no hay registros' }}</strong><p>{{ errorMessage() ? 'Revisá la conexión con la API para ver el listado.' : query() ? 'Probá con otro término de búsqueda.' : 'Creá el primer registro para esta sección.' }}</p>@if (!query() && !errorMessage()) { <button class="button button-secondary" type="button" (click)="openCreateForm()"><svg lucidePlus [size]="16"></svg> Crear registro</button> }</div>
+                </td></tr>
+              } @else {
+                @for (record of filteredRecords(); track record['id']) {
+                  <tr>
+                    <td class="id-cell">#{{ record['id'] }}</td>
+                    @for (field of section().fields; track field.key) { <td [class.primary-cell]="$index === 0">{{ cellValue(record, field) }}</td> }
+                    <td><div class="row-actions"><button class="icon-button" type="button" aria-label="Editar registro" title="Editar" (click)="openEditForm(record)"><svg lucidePencil [size]="16"></svg></button><button class="icon-button icon-danger" type="button" aria-label="Eliminar registro" title="Eliminar" (click)="deleteRecord(record)"><svg lucideTrash2 [size]="16"></svg></button></div></td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer class="table-footer"><span><span class="footer-dot" [class.offline]="errorMessage()"></span>{{ errorMessage() ? 'Revisá el aviso para actualizar' : 'Datos actualizados' }}</span><span>Instituto Superior Cura Gabriel Brochero</span></footer>
+      </section>
+      <footer class="page-footer"><span>Programación III · Trabajo práctico</span><span>Gestión académica y deportiva</span></footer>
+    </section>
+  </main>
+
+  @if (formOpen()) {
+    <div class="modal-backdrop" (click)="closeForm()">
+      <section class="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editor-title" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div><p class="eyebrow">{{ section().label }}</p><h2 id="editor-title">{{ editingId() === null ? 'Nuevo registro' : 'Editar registro' }}</h2></div>
+          <button class="icon-button" type="button" aria-label="Cerrar formulario" (click)="closeForm()"><svg lucideX [size]="19"></svg></button>
+        </header>
+        <form #recordForm="ngForm" (ngSubmit)="saveRecord(recordForm.valid === true)">
+          @if (errorMessage(); as message) {
+            <div class="notice notice-error" role="alert"><p>{{ message }}</p></div>
+          }
+          <div class="form-grid">
+            @for (field of section().fields; track field.key) {
+              <label class="field" [class.field-wide]="field.key === 'description'">
+                <span>{{ field.label }} @if (field.required) { <b aria-hidden="true">*</b> }</span>
+                @if (field.type === 'select') {
+                  <select [name]="field.key" [(ngModel)]="draft[field.key]" [required]="field.required ?? false">@for (option of field.options ?? []; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select>
+                } @else if (field.key === 'description') {
+                  <textarea [name]="field.key" [(ngModel)]="draft[field.key]" [required]="field.required ?? false" [minlength]="field.minLength ?? null" [maxlength]="field.maxLength ?? null" [placeholder]="field.placeholder ?? ''" rows="4"></textarea>
+                } @else {
+                  <input [name]="field.key" [type]="field.type ?? 'text'" [(ngModel)]="draft[field.key]" [required]="field.required ?? false" [min]="field.min ?? null" [max]="field.max ?? null" [minlength]="field.minLength ?? null" [maxlength]="field.maxLength ?? null" [placeholder]="field.placeholder ?? ''" />
+                }
+              </label>
+            }
+            @if (memberDefinition(); as membership) {
+              <label class="field field-wide" for="initial-members">
+                <span>{{ membership.label }} <b aria-hidden="true">*</b></span>
+                <select id="initial-members" name="initialMembers" multiple required
+                  [(ngModel)]="selectedMemberIds" [disabled]="membersLoading() || memberLoadError() !== null">
+                  @for (member of initialMembers(); track member['id']) {
+                    <option [ngValue]="member['id']">{{ member['name'] }} (#{{ member['id'] }})</option>
+                  }
+                </select>
+                <span>Elegí al menos uno. Mantené Ctrl para seleccionar varios.</span>
+              </label>
+              @if (membersLoading()) {
+                <p role="status">Cargando {{ membership.label.toLocaleLowerCase() }}...</p>
+              } @else if (memberLoadError(); as message) {
+                <div role="alert"><p>{{ message }}</p><button class="button button-secondary" type="button" (click)="loadInitialMembers()">Reintentar</button></div>
+              } @else if (initialMembers().length === 0) {
+                <p role="status">{{ membership.empty }}</p>
+              }
+            }
+          </div>
+          <p class="form-note"><span>*</span> Campos obligatorios.</p>
+          <footer class="modal-actions"><button class="button button-quiet" type="button" (click)="closeForm()">Cancelar</button><button class="button button-primary" type="submit" [disabled]="recordForm.invalid || (memberDefinition() !== null && (membersLoading() || memberLoadError() !== null || selectedMemberIds.length === 0))">{{ editingId() === null ? 'Crear registro' : 'Guardar cambios' }}</button></footer>
+        </form>
+      </section>
+    </div>
+  }
+</div>

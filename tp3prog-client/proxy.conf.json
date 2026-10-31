@@ -1,0 +1,30 @@
+{
+  "/Players": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/Teams": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/Trainers": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/Students": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/Courses": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/Activities": {
+    "target": "http://localhost:5175",
+    "secure": false
+  },
+  "/User": {
+    "secure": false,
+    "target": "http://localhost:5175"
+  }
+}

@@ -37,5 +37,10 @@ public class PlayersController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
-    public IActionResult Delete(long id) => playerDAO.Delete(id) ? NoContent() : NotFound();
+    public IActionResult Delete(long id) => playerDAO.Delete(id) switch
+    {
+        RelationshipResult.Success => NoContent(),
+        RelationshipResult.NotFound => NotFound(),
+        _ => Conflict("No se puede eliminar al jugador: dejaría un equipo sin jugadores. Agregá otro primero.")
+    };
 }

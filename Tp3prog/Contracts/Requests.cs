@@ -44,7 +44,7 @@ public sealed class TrainerRequest : PersonRequest
 }
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed class CourseRequest : EntityRequest
+public class CourseRequest : EntityRequest
 {
     [Required]
     [StringLength(100, MinimumLength = 3)]
@@ -52,7 +52,21 @@ public sealed class CourseRequest : EntityRequest
 }
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed class TeamRequest : EntityRequest
+public sealed class CreateCourseRequest : CourseRequest, IValidatableObject
+{
+    [Required]
+    [MinLength(1)]
+    public List<long> StudentIds { get; set; } = [];
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (StudentIds?.Any(id => id <= 0) == true)
+            yield return new ValidationResult("Los IDs de alumnos deben ser positivos.", [nameof(StudentIds)]);
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public class TeamRequest : EntityRequest
 {
     [Required]
     [StringLength(100, MinimumLength = 3)]
@@ -61,6 +75,20 @@ public sealed class TeamRequest : EntityRequest
     [Required]
     [StringLength(50, MinimumLength = 3)]
     public string Category { get; set; } = string.Empty;
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class CreateTeamRequest : TeamRequest, IValidatableObject
+{
+    [Required]
+    [MinLength(1)]
+    public List<long> PlayerIds { get; set; } = [];
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (PlayerIds?.Any(id => id <= 0) == true)
+            yield return new ValidationResult("Los IDs de jugadores deben ser positivos.", [nameof(PlayerIds)]);
+    }
 }
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]

@@ -1,0 +1,33 @@
+@use './app/app';
+
+@font-face {
+	font-family: 'Geist';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('/brand/geist-latin.woff2') format('woff2');
+}
+
+:root {
+	--paper: #fffefa;
+	--green: #46695f;
+	--olive: #505d44;
+	--lime: #b8d596;
+	--mint: #eff5f2;
+	--font-display: 'Geist', Arial, sans-serif;
+	--font-body: 'Geist', Arial, sans-serif;
+	font-family: var(--font-body);
+	color: #2d2d2d;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: var(--paper);
+}
+
+* { box-sizing: border-box; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #8aaf79; outline-offset: 3px; }
+::selection { color: #293f35; background: #d4e7bf; }
+/* You can add global styles to this file, and also import other style files */

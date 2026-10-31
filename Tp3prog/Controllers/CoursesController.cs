@@ -22,10 +22,13 @@ public class CoursesController : ControllerBase
     public ActionResult<CourseResponse> GetById(long id) => courseDAO.GetById(id) is { } course ? Ok(course.ToResponse()) : NotFound();
 
     [HttpPost]
-    public ActionResult<CourseResponse> Create(CourseRequest request)
+    public ActionResult<CourseResponse> Create(CreateCourseRequest request)
     {
         if (request.Id != 0) return BadRequest("El Id se genera al crear el curso; omitilo o enviá 0.");
-        var created = courseDAO.Create(request.ToEntity());
+        var created = request.ToEntity();
+        var result = courseDAO.Create(created, request.StudentIds);
+        if (result == RelationshipResult.MinimumRequired) return BadRequest("El curso debe tener al menos un alumno.");
+        if (result == RelationshipResult.NotFound) return NotFound("Uno o más alumnos no existen.");
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToResponse());
     }
 
@@ -55,6 +58,7 @@ public class CoursesController : ControllerBase
     {
         RelationshipResult.Success => NoContent(),
         RelationshipResult.NotFound => NotFound("El curso o el registro relacionado no existe."),
+        RelationshipResult.MinimumRequired => Conflict("El curso debe conservar al menos un alumno. Agregá otro antes de quitar al último."),
         _ => Conflict("La actividad ya pertenece a otro curso. Quitá esa asociación antes de reasignarla.")
     };
 }

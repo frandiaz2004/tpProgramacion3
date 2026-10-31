@@ -36,12 +36,17 @@ public class StudentDAO
         return true;
     }
 
-    public bool Delete(long id)
+    public RelationshipResult Delete(long id)
     {
-        var student = GetById(id);
-        if (student is null) return false;
-        context.Students.Remove(student);
-        context.SaveChanges();
-        return true;
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [id]);
+        if (!context.Students.Any(student => student.Id == id)) return RelationshipResult.NotFound;
+        var courses = context.Courses.Where(course => course.Students.Any(student => student.Id == id)).Select(course => course.Id).ToList();
+        MembershipLocks.Courses(context, courses);
+        if (context.Courses.Any(course => course.Students.Any(student => student.Id == id) && course.Students.Count <= 1))
+            return RelationshipResult.MinimumRequired;
+        context.Students.Where(student => student.Id == id).ExecuteDelete();
+        transaction.Commit();
+        return RelationshipResult.Success;
     }
 }

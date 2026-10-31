@@ -4,5 +4,6 @@ public enum RelationshipResult
 {
     Success,
     NotFound,
-    Conflict
+    Conflict,
+    MinimumRequired
 }

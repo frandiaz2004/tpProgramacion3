@@ -20,11 +20,19 @@ public class CourseDAO
         .Include(course => course.Students).Include(course => course.Activities).AsSplitQuery()
         .SingleOrDefault(course => course.Id == id);
 
-    public Course Create(Course course)
+    public RelationshipResult Create(Course course, IReadOnlyCollection<long>? studentIds)
     {
+        if (studentIds is null || studentIds.Count == 0) return RelationshipResult.MinimumRequired;
+        var ids = studentIds.Distinct().ToArray();
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, ids);
+        var students = context.Students.Where(student => ids.Contains(student.Id)).ToList();
+        if (students.Count != ids.Length) return RelationshipResult.NotFound;
+        course.Students = students;
         context.Courses.Add(course);
         context.SaveChanges();
-        return course;
+        transaction.Commit();
+        return RelationshipResult.Success;
     }
 
     public bool Update(long id, Course course)
@@ -38,37 +46,49 @@ public class CourseDAO
 
     public bool Delete(long id)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.Courses(context, [id]);
         var course = GetById(id);
         if (course is null) return false;
         context.Courses.Remove(course);
         context.SaveChanges();
+        transaction.Commit();
         return true;
     }
 
     public RelationshipResult AddStudent(long id, long studentId)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [studentId]);
+        MembershipLocks.Courses(context, [id]);
         var course = GetById(id);
         var student = context.Students.Find(studentId);
         if (course is null || student is null) return RelationshipResult.NotFound;
-        if (course.Students.All(existing => existing.Id != studentId))
+        if (!context.Courses.Any(existing => existing.Id == id && existing.Students.Any(member => member.Id == studentId)))
         {
             course.Students.Add(student);
             context.SaveChanges();
         }
+        transaction.Commit();
         return RelationshipResult.Success;
     }
 
     public RelationshipResult RemoveStudent(long id, long studentId)
     {
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [studentId]);
+        MembershipLocks.Courses(context, [id]);
+        if (!context.Courses.Any(course => course.Id == id) || !context.Students.Any(student => student.Id == studentId))
+            return RelationshipResult.NotFound;
+        var count = context.Courses.Where(course => course.Id == id && course.Students.Any(student => student.Id == studentId))
+            .Select(course => (int?)course.Students.Count).SingleOrDefault();
+        if (count is null) return RelationshipResult.Success;
+        if (count <= 1) return RelationshipResult.MinimumRequired;
         var course = GetById(id);
-        var student = context.Students.Find(studentId);
-        if (course is null || student is null) return RelationshipResult.NotFound;
-        var enrolled = course.Students.SingleOrDefault(existing => existing.Id == studentId);
-        if (enrolled is not null)
-        {
-            course.Students.Remove(enrolled);
-            context.SaveChanges();
-        }
+        var enrolled = course!.Students.Single(existing => existing.Id == studentId);
+        course.Students.Remove(enrolled);
+        context.SaveChanges();
+        transaction.Commit();
         return RelationshipResult.Success;
     }
 

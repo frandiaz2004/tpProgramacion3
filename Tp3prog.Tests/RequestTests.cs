@@ -110,7 +110,7 @@ public class RequestTests
         using var database = new TestDatabase();
         using var context = database.CreateContext();
         var controller = new CoursesController(new CourseDAO(context));
-        var result = controller.Create(new CourseRequest { Id = 12, Name = "Curso" });
+        var result = controller.Create(new CreateCourseRequest { Id = 12, Name = "Curso", StudentIds = [1] });
         Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Empty(context.Courses);
     }

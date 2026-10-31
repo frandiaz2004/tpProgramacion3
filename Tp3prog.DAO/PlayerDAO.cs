@@ -37,12 +37,17 @@ public class PlayerDAO
         return true;
     }
 
-    public bool Delete(long id)
+    public RelationshipResult Delete(long id)
     {
-        var player = GetById(id);
-        if (player is null) return false;
-        context.Players.Remove(player);
-        context.SaveChanges();
-        return true;
+        using var transaction = MembershipLocks.Begin(context);
+        MembershipLocks.People(context, [id]);
+        if (!context.Players.Any(player => player.Id == id)) return RelationshipResult.NotFound;
+        var teams = context.Teams.Where(team => team.Players.Any(player => player.Id == id)).Select(team => team.Id).ToList();
+        MembershipLocks.Teams(context, teams);
+        if (context.Teams.Any(team => team.Players.Any(player => player.Id == id) && team.Players.Count <= 1))
+            return RelationshipResult.MinimumRequired;
+        context.Players.Where(player => player.Id == id).ExecuteDelete();
+        transaction.Commit();
+        return RelationshipResult.Success;
     }
 }

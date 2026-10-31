@@ -6,6 +6,12 @@
 @teamId = 1
 @courseId = 1
 @activityId = 1
+@email = REEMPLAZAR_POR_TU_EMAIL
+@password = REEMPLAZAR_POR_TU_CLAVE
+@token = PEGAR_TOKEN_DEL_LOGIN
+@userId = REEMPLAZAR_POR_TU_ID
+@updatedEmail = REEMPLAZAR_POR_TU_NUEVO_EMAIL
+@newPassword = REEMPLAZAR_POR_TU_NUEVA_CLAVE
 
 ### Crear jugador
 POST {{host}}/Players
@@ -29,13 +35,13 @@ Content-Type: application/json
 POST {{host}}/Teams
 Content-Type: application/json
 
-{"name":"Los Halcones","category":"Primera"}
+{"name":"Los Halcones","category":"Primera","playerIds":[{{playerId}}]}
 
 ### Crear curso
 POST {{host}}/Courses
 Content-Type: application/json
 
-{"name":"Programacion III"}
+{"name":"Programacion III","studentIds":[{{studentId}}]}
 
 ### Crear actividad (type: 0 Class, 1 Exam, 2 Assignment)
 POST {{host}}/Activities
@@ -102,17 +108,23 @@ Content-Type: application/json
 ### Recurso inexistente
 GET {{host}}/Courses/9223372036854775807
 
-### Quitar estudiante del curso
+### Quitar estudiante del curso (409 si es el último)
 DELETE {{host}}/Courses/{{courseId}}/students/{{studentId}}
 
 ### Quitar actividad del curso sin borrarla
 DELETE {{host}}/Courses/{{courseId}}/activities/{{activityId}}
 
-### Quitar jugador del equipo
+### Quitar jugador del equipo (409 si es el último)
 DELETE {{host}}/Teams/{{teamId}}/players/{{playerId}}
 
 ### Quitar entrenador del equipo
 DELETE {{host}}/Teams/{{teamId}}/trainers/{{trainerId}}
+
+### Borrar equipo antes de eliminar sus jugadores
+DELETE {{host}}/Teams/{{teamId}}
+
+### Borrar curso antes de eliminar sus alumnos
+DELETE {{host}}/Courses/{{courseId}}
 
 ### Borrar jugador
 DELETE {{host}}/Players/{{playerId}}
@@ -126,8 +138,52 @@ DELETE {{host}}/Students/{{studentId}}
 ### Borrar actividad
 DELETE {{host}}/Activities/{{activityId}}
 
-### Borrar equipo
-DELETE {{host}}/Teams/{{teamId}}
+### Crear usuario con tus credenciales (201; email repetido: 409)
+POST {{host}}/User
+Content-Type: application/json
 
-### Borrar curso
-DELETE {{host}}/Courses/{{courseId}}
+{"email":"{{email}}","password":"{{password}}"}
+
+### Iniciar sesión (200); copiá token de la respuesta en @token.
+POST {{host}}/User/login
+Content-Type: application/json
+
+{"email":"{{email}}","password":"{{password}}"}
+
+### Consultar usuario autenticado (200)
+GET {{host}}/User/me
+Authorization: Bearer {{token}}
+
+### Credenciales incorrectas (401; este usuario no debe existir)
+POST {{host}}/User/login
+Content-Type: application/json
+
+{"email":"no-existe@example.invalid","password":"clave-incorrecta"}
+
+### Sin token (401)
+GET {{host}}/User/me
+
+### Consultar tu cuenta por ID
+GET {{host}}/User/{{userId}}
+Authorization: Bearer {{token}}
+
+### Cambiar tu email conservando la contraseña
+PUT {{host}}/User/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"email":"{{updatedEmail}}","currentPassword":"{{password}}"}
+
+### Cambiar tu contraseña
+PUT {{host}}/User/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"email":"{{updatedEmail}}","currentPassword":"{{password}}","newPassword":"{{newPassword}}"}
+
+### Eliminar tu cuenta después del cambio de contraseña
+DELETE {{host}}/User/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"currentPassword":"{{newPassword}}"}

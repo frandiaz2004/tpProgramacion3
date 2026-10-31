@@ -37,5 +37,10 @@ public class StudentsController : ControllerBase
     }
 
     [HttpDelete("{id:long}")]
-    public IActionResult Delete(long id) => studentDAO.Delete(id) ? NoContent() : NotFound();
+    public IActionResult Delete(long id) => studentDAO.Delete(id) switch
+    {
+        RelationshipResult.Success => NoContent(),
+        RelationshipResult.NotFound => NotFound(),
+        _ => Conflict("No se puede eliminar al alumno: dejaría un curso sin alumnos. Agregá otro primero.")
+    };
 }

@@ -22,10 +22,13 @@ public class TeamsController : ControllerBase
     public ActionResult<TeamResponse> GetById(long id) => teamDAO.GetById(id) is { } team ? Ok(team.ToResponse()) : NotFound();
 
     [HttpPost]
-    public ActionResult<TeamResponse> Create(TeamRequest request)
+    public ActionResult<TeamResponse> Create(CreateTeamRequest request)
     {
         if (request.Id != 0) return BadRequest("El Id se genera al crear el equipo; omitilo o enviá 0.");
-        var created = teamDAO.Create(request.ToEntity());
+        var created = request.ToEntity();
+        var result = teamDAO.Create(created, request.PlayerIds);
+        if (result == RelationshipResult.MinimumRequired) return BadRequest("El equipo debe tener al menos un jugador.");
+        if (result == RelationshipResult.NotFound) return NotFound("Uno o más jugadores no existen.");
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToResponse());
     }
 
@@ -55,6 +58,7 @@ public class TeamsController : ControllerBase
     {
         RelationshipResult.Success => NoContent(),
         RelationshipResult.NotFound => NotFound("El equipo o el registro relacionado no existe."),
+        RelationshipResult.MinimumRequired => Conflict("El equipo debe conservar al menos un jugador. Agregá otro antes de quitar al último."),
         _ => Conflict("No se pudo guardar la asociación.")
     };
 }
