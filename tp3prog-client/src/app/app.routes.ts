@@ -3,6 +3,7 @@ import { CanActivateFn, Router, Routes } from '@angular/router';
 import { UserService } from './auth/user.service';
 import { Login } from './auth/login';
 import { Dashboard } from './dashboard';
+import { Inventory } from './inventory';
 
 export const sessionGuard: CanActivateFn = () => inject(UserService).isAuthenticated()
   || inject(Router).createUrlTree(['/login']);
@@ -10,6 +11,7 @@ export const sessionGuard: CanActivateFn = () => inject(UserService).isAuthentic
 export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'dashboard', component: Dashboard, canActivate: [sessionGuard] },
+  { path: 'inventory', component: Inventory },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: '**', redirectTo: 'login' },
 ];

@@ -1,0 +1,15 @@
+<!-- Renderizado directo y limpio -->
+<header class="dashboard-kpi">
+  <h2>Resumen</h2>
+  <p>Artículos totales: {{ totalItems() }}</p>
+  <p>Valor de inventario: ${{ totalValue() }}</p>
+</header>
+
+<!-- La nueva sintaxis de control de flujo @for -->
+@for (item of inventory(); track item.id) {
+  <div class="product-row">
+    <span>{{ item.name }}</span>
+    <span>Stock: {{ item.quantity }}</span>
+    <button (click)="addStock(item.id, 1)">Añadir Stock</button>
+  </div>
+}
